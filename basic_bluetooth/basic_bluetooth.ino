@@ -10,6 +10,8 @@
 #define ratingKanan 2
 #define ratingKiri 4
 
+#define TRIG_PIN 12
+#define ECHO_PIN 13
 #define buzzer 19
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -37,67 +39,101 @@ void setup() {
   pinMode(IN4_PIN, OUTPUT);
   pinMode(ENB_PIN, OUTPUT);
 
-  digitalWrite(ENA_PIN, HIGH);
-  digitalWrite(ENB_PIN, HIGH);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 }
-
 void loop() {
-  if (SerialBT.available()) {
-    char data = SerialBT.read();
-    Serial.print("Received: ");
-    Serial.println(data);
-    lastCommand = data;
+  // Periksa jarak terlepas dari input Bluetooth
+  long duration;
+  float distance;
 
-    if (data == 'F') {
+  // Kirim sinyal trigger
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  duration = pulseIn(ECHO_PIN, HIGH);
+  distance = duration * 0.034 / 2;
+
+  Serial.print("Jarak: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  char currentCommand = 0;  // Variabel sementara untuk perintah saat ini
+
+  if (SerialBT.available()) {
+    currentCommand = SerialBT.read();
+    Serial.print("Received: ");
+    Serial.println(currentCommand);
+    lastCommand = currentCommand;  // Simpan perintah terakhir yang diterima
+  } else {
+    currentCommand = lastCommand;  // Gunakan perintah terakhir jika tidak ada yang baru
+  }
+
+  if (distance < 10) {
+    mundur();
+    delay(500);
+    stop();
+    digitalWrite(buzzer, HIGH);
+  } else {
+
+    digitalWrite(buzzer, LOW);
+
+    if (currentCommand == 'F') {
       maju();
-      // Jangan matikan blinkingHazard di sini!
       blinkingKiri = false;
       blinkingKanan = false;
-    } else if (data == 'S') {
+    } else if (currentCommand == 'S') {
       stop();
       blinkingKiri = false;
       blinkingKanan = false;
-    } else if (data == 'L') {
+    } else if (currentCommand == 'L') {
       belokKiri();
       blinkingKiri = false;
       blinkingKanan = false;
-    } else if (data == 'R') {
+    } else if (currentCommand == 'R') {
       belokKanan();
       blinkingKiri = false;
       blinkingKanan = false;
-    } else if (data == 'B') {
+    } else if (currentCommand == 'B') {
       mundur();
-      blinkingKiri = false;
-      blinkingKanan = false;
-    } else if (data == '1') {
-      blinkingKiri = true;
-      blinkingKanan = false;
-      blinkingHazard = false;
-    } else if (data == '4') {
-      blinkingKanan = true;
-      blinkingKiri = false;
-      blinkingHazard = false;
-    } else if (data == 'X') {
-      blinkingHazard = true;
-      blinkingKanan = false;
-      blinkingKiri = false;
-    } else if (data == '2' || data == 'x') {
-      blinkingHazard = false;
-      blinkingKanan = false;
-      blinkingKiri = false;
-      digitalWrite(ratingKanan, LOW);
-      digitalWrite(ratingKiri, LOW);
-    } else if (data == 'Y') {
-      digitalWrite(buzzer, HIGH);
-      delay(100);
-      digitalWrite(buzzer, LOW);
-    } else if (data == 'Z') {
-      rem();
       blinkingKiri = false;
       blinkingKanan = false;
     }
   }
 
+  if (currentCommand == '1') {
+    blinkingKiri = true;
+    blinkingKanan = false;
+    blinkingHazard = false;
+  } else if (currentCommand == '4') {
+    blinkingKanan = true;
+    blinkingKiri = false;
+    blinkingHazard = false;
+  } else if (currentCommand == 'X') {
+    blinkingHazard = true;
+    blinkingKanan = false;
+    blinkingKiri = false;
+  } else if (currentCommand == '2' || currentCommand == 'x') {
+    blinkingHazard = false;
+    blinkingKanan = false;
+    blinkingKiri = false;
+    digitalWrite(ratingKanan, LOW);
+    digitalWrite(ratingKiri, LOW);
+  } else if (currentCommand == 'Y') {
+    digitalWrite(buzzer, HIGH);
+    delay(100);
+    digitalWrite(buzzer, LOW);
+  } else if (currentCommand == 'Z') {
+    rem();
+    blinkingKiri = false;
+    blinkingKanan = false;
+  }
+
+  // Jalankan fungsi blinking jika aktif
   if (blinkingHazard) {
     fungsiHazard();
   } else {
@@ -114,6 +150,10 @@ void maju() {
   digitalWrite(IN2_PIN, LOW);
   digitalWrite(IN3_PIN, HIGH);
   digitalWrite(IN4_PIN, LOW);
+
+  
+  analogWrite(ENA_PIN, 128);
+  analogWrite(ENB_PIN, 128);
 }
 
 void stop() {
@@ -142,6 +182,9 @@ void mundur() {
   digitalWrite(IN2_PIN, HIGH);
   digitalWrite(IN3_PIN, LOW);
   digitalWrite(IN4_PIN, HIGH);
+
+    analogWrite(ENA_PIN, 255);
+  analogWrite(ENB_PIN, 255);
 }
 void rem() {
   // Rem untuk motor kiri
