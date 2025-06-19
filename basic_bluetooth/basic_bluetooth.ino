@@ -24,6 +24,7 @@ char lastCommand = 0;
 bool blinkingKanan = false;
 bool blinkingKiri = false;
 bool blinkingHazard = false;
+int modeSpeed = 100;
 
 void setup() {
   Serial.begin(115200);
@@ -73,12 +74,25 @@ void loop() {
     currentCommand = lastCommand;  // Gunakan perintah terakhir jika tidak ada yang baru
   }
 
+  if (currentCommand == 'Q') {
+    modeSpeed = 90;
+  } else if (currentCommand == 'W') {
+    modeSpeed = 150;
+  } else if (currentCommand == 'E') {
+    modeSpeed = 200;
+  } else if (currentCommand == 'R') {
+    modeSpeed = 255;
+  }
+
   if (distance < 10) {
     mundur();
     delay(500);
     stop();
     digitalWrite(buzzer, HIGH);
+    blinkingHazard = true;
+
   } else {
+    blinkingHazard = false;
 
     digitalWrite(buzzer, LOW);
 
@@ -125,12 +139,12 @@ void loop() {
     digitalWrite(ratingKiri, LOW);
   } else if (currentCommand == 'Y') {
     digitalWrite(buzzer, HIGH);
-    delay(100);
-    digitalWrite(buzzer, LOW);
   } else if (currentCommand == 'Z') {
     rem();
     blinkingKiri = false;
     blinkingKanan = false;
+  } else if (currentCommand == 'J') {
+    digitalWrite(buzzer, LOW);
   }
 
   // Jalankan fungsi blinking jika aktif
@@ -151,9 +165,9 @@ void maju() {
   digitalWrite(IN3_PIN, HIGH);
   digitalWrite(IN4_PIN, LOW);
 
-  
-  analogWrite(ENA_PIN, 128);
-  analogWrite(ENB_PIN, 128);
+
+  analogWrite(ENA_PIN, modeSpeed);
+  analogWrite(ENB_PIN, modeSpeed);
 }
 
 void stop() {
@@ -183,7 +197,7 @@ void mundur() {
   digitalWrite(IN3_PIN, LOW);
   digitalWrite(IN4_PIN, HIGH);
 
-    analogWrite(ENA_PIN, 255);
+  analogWrite(ENA_PIN, 255);
   analogWrite(ENB_PIN, 255);
 }
 void rem() {
