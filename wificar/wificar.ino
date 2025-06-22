@@ -50,7 +50,7 @@ void setup() {
   lcd.begin();
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("Halo, bro!");
+  lcd.print("haloo, loadingg..");
 
   delay(1000);
   Serial.begin(115200);
@@ -87,6 +87,8 @@ void setup() {
 void loop() {
   String data;
   if (Firebase.ready() && signupOK) {
+    lcd.setCursor(0, 1);
+    lcd.print("Firebase: NEWAMAN");
     if (Firebase.RTDB.getString(&fbdo, "kontrol/gerak")) {
       if (fbdo.dataType() == "string") {
         data = fbdo.stringData();
@@ -103,6 +105,12 @@ void loop() {
         } else if (data == "S") {
           stop();
           Serial.println("STOP KEBACA!");
+        } else if (data == "L") {
+          belokKiri();
+        } else if (data == "R") {
+          belokKanan();
+        } else if (data == "B") {
+          mundur();
         } else {
           Serial.println("Perintah tidak dikenali: " + data);
         }
@@ -110,6 +118,8 @@ void loop() {
     } else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
+      lcd.setCursor(0, 1);
+      lcd.print("Firebase: NEWEROR");
     }
     Serial.println("______________________________");
   }
