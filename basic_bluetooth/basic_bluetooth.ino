@@ -84,7 +84,7 @@ void loop() {
     modeSpeed = 255;
   }
 
-  if (distance < 10) {
+  if (distance > 10) {
     mundur();
     delay(500);
     stop();
